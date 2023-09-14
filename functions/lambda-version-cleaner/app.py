@@ -107,10 +107,11 @@ def lambda_handler(event, context):
 
             # Delete all versions in versions_to_delete
             for version in versions_to_delete:
-                delete_function_version(version, function["function_name"], region)
-                LOGGER.info(
-                    f"Deleted version {version} from function {function['function_name']}"
-                )
+                if version not in alias_versions:
+                    delete_function_version(version, function["function_name"], region)
+                    LOGGER.info(
+                        f"Deleted version {version} from function {function['function_name']}"
+                    )
 
         LOGGER.info(f"Deleted {len(versions_to_delete)} versions in region {region}")
         num_deleted_versions += len(versions_to_delete)
