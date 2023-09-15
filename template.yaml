@@ -59,11 +59,11 @@ Resources:
         Variables:
           NUM_VERSIONS_TO_KEEP: !Ref NumberOfVersionsToKeep
           REGIONS: !Join [",", !Ref AWSRegions]
-      # Events:
-      #   Daily:
-      #     Type: Schedule
-      #     Properties:
-      #       Schedule: rate(7 days)
+      Events:
+        Daily:
+          Type: Schedule
+          Properties:
+            Schedule: rate(7 days)
 
   # ----------------------------------------------------------------------------
   # AWS::IAM::Role
