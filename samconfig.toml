@@ -1,0 +1,9 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "lambda-version-cleaner"
+s3_prefix = "lambda-version-cleaner"
+confirm_changeset = false
+capabilities = "CAPABILITY_IAM"
+tags = "product=\"common\" grouping=\"tooling\" service=\"lambda-version-cleaner\" managed-resource=\"sam\""

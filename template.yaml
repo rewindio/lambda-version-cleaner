@@ -1,0 +1,123 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: SAM Template for Lambda that cleans up old Lambda versions
+
+Parameters:
+  NumberOfVersionsToKeep:
+    Type: Number
+    Description: Number of latest Lambda versions to keep per Lambda function
+  AWSRegions:
+    Type: CommaDelimitedList
+    Description: Comma delimited list of AWS regions to apply scheduled Lambda clean ups to
+    AllowedValues:
+      - us-east-1
+      - us-east-2
+      - us-west-1
+      - us-west-2
+      - ap-east-1
+      - ap-southeast-3
+      - ap-south-1
+      - ap-northeast-3
+      - ap-northeast-2
+      - ap-southeast-1
+      - ap-southeast-2
+      - ap-northeast-1
+      - ca-central-1
+      - eu-central-1
+      - eu-west-1
+      - eu-west-2
+      - eu-south-1
+      - eu-west-3
+      - eu-north-1
+  AlarmsSNSTopic:
+    Type: String
+    Description: SNS topic ARN to send cloudwatch alerts to
+    Default: ""
+
+Conditions:
+  AlarmsSNSTopicExists: !Not
+    - !Equals 
+      - !Ref AlarmsSNSTopic
+      - ""
+
+Resources:
+  # ----------------------------------------------------------------------------
+  # AWS::Serverless::Function
+  # ----------------------------------------------------------------------------
+
+  LambdaVersionCleaner:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: lambda-version-cleaner
+      CodeUri: ./functions/lambda-version-cleaner
+      Handler: app.lambda_handler
+      MemorySize: 128
+      Timeout: 600
+      Role: !GetAtt LambdaVersionCleanerIAMRole.Arn
+      Runtime: python3.11
+      Environment:
+        Variables:
+          NUM_VERSIONS_TO_KEEP: !Ref NumberOfVersionsToKeep
+          REGIONS: !Join [",", !Ref AWSRegions]
+      # Events:
+      #   Daily:
+      #     Type: Schedule
+      #     Properties:
+      #       Schedule: rate(7 days)
+
+  # ----------------------------------------------------------------------------
+  # AWS::IAM::Role
+  # ----------------------------------------------------------------------------
+
+  LambdaVersionCleanerIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: lambda-version-cleaner-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowLambdaServiceToAssumeRole
+            Effect: Allow
+            Action:
+              - sts:AssumeRole
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: AllowLambdaActions
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:ListAliases
+                  - lambda:ListFunctions
+                  - lambda:ListVersionsByFunction
+                  - lambda:DeleteFunction
+                Resource: "*"
+
+  # ----------------------------------------------------------------------------
+  # AWS::CloudWatch::Alarm
+  # ----------------------------------------------------------------------------
+
+  LambdaVersionCleanerInvocationAlarm:
+    Condition: AlarmsSNSTopicExists
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${LambdaVersionCleaner} | Failed invocation | infr-3"
+      AlarmDescription: Alarm for Lambda function invocation failure
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref LambdaVersionCleaner
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      Period: 300
+      Statistic: SampleCount
+      Threshold: 1
+      AlarmActions:
+        - !Sub arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${AlarmsSNSTopic}
+      TreatMissingData: missing

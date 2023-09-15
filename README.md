@@ -5,7 +5,7 @@
 
 ## Purpose
 
-This SAM template deploys a Lambda function that deletes on Lambda versions in the account deployed in.
+This SAM template deploys a Lambda function that deletes old Lambda versions in the account deployed in.
 
 ## Installing
 
