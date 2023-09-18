@@ -11,7 +11,7 @@ REGIONS = os.environ["REGIONS"].split(",")
 BOTO_SESSION = boto3.Session()
 LAMBDA_CLIENTS = dict()
 for region in REGIONS:
-    LAMBDA_CLIENTS[region] = BOTO_SESSION.client("lambda")
+    LAMBDA_CLIENTS[region] = BOTO_SESSION.client("lambda", region_name=region)
 
 LOGGER = Logger()
 
