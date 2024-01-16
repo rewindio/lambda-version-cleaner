@@ -97,7 +97,7 @@ def lambda_handler(event, context):
 
         # Loop through all functions and remove old versions
         for function in functions:
-            versions = get_function_versions(function, region)
+            versions = sorted(get_function_versions(function, region), key=int, reverse=True)
             alias_versions = get_function_alias_versions(
                 function["function_name"], region
             )
