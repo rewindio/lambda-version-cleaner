@@ -54,6 +54,7 @@ def get_function_versions(function: Dict[str, str], region: str) -> List[str]:
                 for version in page
                 if version["Version"] != function["version"]
             ],
+            key=int,
             reverse=True,
         )
     except ClientError as e:
@@ -97,7 +98,7 @@ def lambda_handler(event, context):
 
         # Loop through all functions and remove old versions
         for function in functions:
-            versions = sorted(get_function_versions(function, region), key=int, reverse=True)
+            versions = get_function_versions(function, region)
             alias_versions = get_function_alias_versions(
                 function["function_name"], region
             )
