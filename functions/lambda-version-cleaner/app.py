@@ -54,6 +54,7 @@ def get_function_versions(function: Dict[str, str], region: str) -> List[str]:
                 for version in page
                 if version["Version"] != function["version"]
             ],
+            key=int,
             reverse=True,
         )
     except ClientError as e:
